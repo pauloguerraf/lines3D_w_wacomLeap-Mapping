@@ -1,0 +1,6 @@
+ofxGui
+ofxOpenCv
+ofxXmlSettings
+ofxGLWarper
+ofxLeapMotion2
+ofxPiMapper
