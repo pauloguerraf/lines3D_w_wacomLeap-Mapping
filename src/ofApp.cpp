@@ -2,148 +2,62 @@
 
 //--------------------------------------------------------------
 void ofApp::setup() {
-	//just set up the openFrameworks stuff
+	//general setup
 	ofSetFrameRate(60);
 	ofSetVerticalSync(true);
 	ofBackground(0);
-	fullscreen = false;
-	drawing = false;
-
-	//camera setup
-	usecamera = false;
-
 	currentLine = 0;
 	currentColor = ofColor(255, 255, 255);
+	fullscreen = false;
+	//projection mapping
+	customSource = new CustomSource();
+	piMapper.registerFboSource(customSource);
+	piMapper.setup();
 
 	//leap motion stuff
-	leap.open();
-	fbo.allocate(ofGetWidth(), ofGetHeight());
-	
-	//projection mapping
-	for (int i = 0; i<NUM_WARPERS; i++) {
-		warpers.push_back(ofxGLWarper());
-		warpers.back().setup((APP_WIDTH/NUM_WARPERS)*i, 0, (APP_WIDTH / NUM_WARPERS), APP_HEIGHT);
-		//warpers.back().activate();
-	}
-
-	activeWarper = -1;
+	//leap.open();
 }
 
 //--------------------------------------------------------------
 void ofApp::update() {
-	fingersFound.clear();
+	//leapMotion
+	/*fingersFound.clear();
 	simpleHands = leap.getSimpleHands();
 	if (leap.isFrameNew() && simpleHands.size()) {
 		leap.setMappingX(-230, 230, 0, ofGetWidth());
 		leap.setMappingY(490, 90, 0, ofGetHeight());
 		leap.setMappingZ(-150, 150, -200, 200);
+		Globals::zTranslation = simpleHands[0].handPos.z;
+		Globals::handRoll = simpleHands[0].roll;
 	}
 	if (simpleHands.size() == 1) {
-		usecamera = true;
+		Globals::usecamera = true;
 	}
 	else {
-		usecamera = false;
-	}
-	///
-	for (unsigned int i = 0; i < lines.size(); i++) {
-		lines[i].update();
-	}
-
-
-	fbo.begin();
-	ofClear(0, 0, 0, 255);
-	ofSetColor(200);
-	if (usecamera) {
-		ofPushMatrix();
-		ofTranslate(0, 0, -simpleHands[0].handPos.z*10.0f);
-	}
-
-	for (unsigned int i = 0; i < lines.size(); i++) {
-		if (usecamera) {
-			lines[i].initRotateCenter(ofMap(simpleHands[0].roll, 1.5, -2.5, -90, 90));
-		}
-
-		lines[i].draw();
-		if (usecamera)lines[i].endRotateCenter();
-	}
-
-	if (usecamera) {
-		ofPopMatrix();
-	}
-	fbo.end();
-	ofPixels pixels;
-	fbo.readToPixels(pixels);
-	img.setFromPixels(pixels);
-	img.update();
+		Globals::usecamera = false;
+	}*/
+	//lines
 	
-	//spout.sendTexture(fbo.getTexture(), "composition");
+	//projection mapping
+	piMapper.update();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw() {
-	
-	ofSetColor(255);
-	ofClear(0, 0, 0, 255);
-	for (int i = 0; i<NUM_WARPERS; i++) {
-		warpers[i].begin();
-		warpers[i].draw();
-		img.drawSubsection((APP_WIDTH / 4)*i, 0, 800, APP_HEIGHT, (APP_WIDTH/4)*i, 0);
-		warpers[i].draw();
-		warpers[i].end();
-	}
-	//img.draw(0, 0);
+	piMapper.draw();
 }
 
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key) {
+	piMapper.keyPressed(key);
 	if (key == 'f') {
-		fullscreen = !fullscreen;
-		ofSetFullscreen(fullscreen);
-	}
-	if (!drawing) {
-		bool bDeactivateOthers = false;
-		switch (key) {
-		case '1':
-			activeWarper = 0;
-			warpers[0].toogleActive();
-			bDeactivateOthers = true;
-			break;
-			//*
-		case '2':
-			activeWarper = 1;
-			warpers[1].toogleActive();
-			bDeactivateOthers = true;
-			break;
-		case '3':
-			activeWarper = 2;
-			bDeactivateOthers = true;
-			warpers[2].toogleActive();
-			break;
-		case '4':
-			activeWarper = 3;
-			bDeactivateOthers = true;
-			warpers[3].toogleActive();
-			break;
-		case ' ':
-			activeWarper = -1;
-			bDeactivateOthers = true;
-			//*/
-		default:
-			break;
-		}
-
-		if (bDeactivateOthers) {
-			for (int i = 0; i < NUM_WARPERS; i++) {
-				if (i != activeWarper) {
-					warpers[i].deactivate();
-				}
-			}
-		}
+		ofSetFullscreen(!fullscreen);
 	}
 }
 
 //--------------------------------------------------------------
 void ofApp::keyReleased(int key) {
+	piMapper.keyReleased(key);
 }
 
 //--------------------------------------------------------------
@@ -153,27 +67,30 @@ void ofApp::mouseMoved(int x, int y) {
 
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button) {
-	if (activeWarper == -1) {
-		lines[lines.size() - 1].addVertex(x, y);
-	}
+	if (piMapper.getMode() == 0)customSource->addVertex(x, y);
+	else piMapper.mouseDragged(x, y, button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button) {
-	lineWithColor l;
-	l.setColor(currentColor);
-	lines.push_back(l);
-	drawing = true;
+	ofLog(OF_LOG_NOTICE, ofToString(piMapper.getMode()));
+	if (piMapper.getMode() == 0) {
+		lineWithColor l;
+		l.setColor(currentColor);
+		customSource->addLine(l);
+	}
+	else piMapper.mousePressed(x, y, button);
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button) {
-	if (activeWarper == -1) {
-		lines[lines.size() - 1].finishDrawing();
+	if (piMapper.getMode() == 0)
+	{
+		customSource->finishDrawing();
 		currentLine = currentLine + 1;
-		drawing = false;
 		ofLog(OF_LOG_NOTICE, "adding line");
 	}
+	else piMapper.mouseReleased(x, y, button);
 }
 
 //--------------------------------------------------------------
@@ -202,7 +119,7 @@ void ofApp::dragEvent(ofDragInfo dragInfo) {
 }
 //-----------------------------------color picker event
 void ofApp::exit() {
-	if (leap.isConnected()) {
+	/*if (leap.isConnected()) {
 		leap.close();
-	}
+	}*/
 }
