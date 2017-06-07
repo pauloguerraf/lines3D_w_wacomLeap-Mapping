@@ -1,11 +1,12 @@
 #pragma once
 
 #include "ofMain.h"
-//#include "ofxLeapMotion2.h"
 #include "CustomSource.h"
 #include "lineWithColor.h"
 #include "ofxXmlSettings.h"
 #include "ofxPiMapper.h"
+#include "ofxLeapMotion2.h"
+#include "ofxDatGui.h"
 
 #define APP_WIDTH 5120
 #define APP_HEIGHT 768
@@ -32,15 +33,17 @@ public:
 
 	ofVec3f center;
 	int currentLine;
+	bool isDrawing;
 	ofColor currentColor;
-	bool fullscreen;
-
 	//leapmotion
-	//ofxLeapMotion leap;
-	//vector <ofxLeapMotionSimpleHand> simpleHands;
-	//vector <int> fingersFound;
+	ofxLeapMotion leap;
+	vector <ofxLeapMotionSimpleHand> simpleHands;
+	vector <int> fingersFound;
+	
 
 	//projection mapping
 	ofxPiMapper piMapper;
 	CustomSource * customSource;
+
+	
 };

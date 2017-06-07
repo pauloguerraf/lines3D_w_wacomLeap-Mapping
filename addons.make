@@ -1,4 +1,5 @@
 ofxGui
 ofxXmlSettings
+ofxDatGui
 ofxLeapMotion2
 ofxPiMapper

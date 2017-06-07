@@ -23,8 +23,13 @@ void CustomSource::addLine(lineWithColor l_) {
 void CustomSource::finishDrawing() {
 	lines[lines.size() - 1].finishDrawing();
 }
+
+void CustomSource::clearLines() {
+	lines.clear();
+}
+
 void CustomSource::draw(){
-	ofClear(0, 255, 0, 255);
+	ofClear(0, 0, 0, 255);
 	ofSetColor(200);
 	if (usecamera) {
 		ofPushMatrix();
@@ -36,6 +41,7 @@ void CustomSource::draw(){
 			lines[i].initRotateCenter(ofMap(handRoll, 1.5, -2.5, -90, 90));
 		}
 		lines[i].draw();
+		ofEllipse(ofPoint(ofGetMouseX(), ofGetMouseY(), 0), 5, 5);
 		if (usecamera)lines[i].endRotateCenter();
 	}
 
